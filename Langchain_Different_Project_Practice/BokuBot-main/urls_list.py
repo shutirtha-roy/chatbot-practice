@@ -1,3 +1,3 @@
 urls = [
-    'https://www.swinburneonline.edu.au/faqs/'
+    'https://www.swinburne.edu.au/collaboration-partnerships/research-engagement/'
 ]

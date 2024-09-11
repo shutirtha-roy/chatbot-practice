@@ -12,6 +12,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 load_dotenv()
 
 
+
 def get_vectordb(vector_path):
     embedder = OpenAIEmbeddings()
     vector_store = FAISS.load_local(vector_path, embedder, index_name="index", allow_dangerous_deserialization=True)
@@ -34,9 +35,14 @@ def create_chain(vector_db):
         llm=model
     )
 
-    retriever = vector_db.as_retriever(search_kwargs={'k': 20}) #set the parameter according to your need
-    retrieval_chain = create_retrieval_chain(retriever, chain)
+    retriever = vector_db.as_retriever(
+        search_type = "similarity", search_kwargs={'k': 1, "score_threshold": 0.1}
+    ) #set the parameter according to your need
 
+    #print(retriever)
+    #print("\n")
+    retrieval_chain = create_retrieval_chain(retriever, chain)
+    #print(retrieval_chain)
     return retrieval_chain
 
 def process_chat(chain, query, chat_history):
@@ -49,6 +55,10 @@ def process_chat(chain, query, chat_history):
 
 vector_db = get_vectordb(vector_path = 'BOKU_BOT')
 chain = create_chain(vector_db)
+
+#embedding_vector = OpenAIEmbeddings().embed_query('CEO of google?')
+#docs = vector_db.similarity_search_by_vector(embedding_vector)
+#print(docs[0])
 
 def main():
     st.set_page_config(page_title="Chat With BOKU", page_icon=":goat:")
