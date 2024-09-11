@@ -11,8 +11,6 @@ from langchain_core.messages import HumanMessage, AIMessage
 
 load_dotenv()
 
-
-
 def get_vectordb(vector_path):
     embedder = OpenAIEmbeddings()
     vector_store = FAISS.load_local(vector_path, embedder, index_name="index", allow_dangerous_deserialization=True)
@@ -36,61 +34,57 @@ def create_chain(vector_db):
     )
 
     retriever = vector_db.as_retriever(
-        search_type = "similarity", search_kwargs={'k': 1, "score_threshold": 0.1}
+        search_type = "mmr", search_kwargs={'k': 1, "score_threshold": 0.1}
     ) #set the parameter according to your need
-
-    #print(retriever)
-    #print("\n")
+    
+    #print(vector_db.similarity_search_with_score("Swinburne", search_type = "mmr", k=1))
+    
     retrieval_chain = create_retrieval_chain(retriever, chain)
-    #print(retrieval_chain)
+    #print([doc for doc in retrieval_chain])
+    #print(retriever)
+
     return retrieval_chain
 
-def process_chat(chain, query, chat_history):
+def process_chat(vector_db, chain, query, chat_history):
     response = chain.invoke({
         'input': query,
         'chat_history': chat_history
     })
+
+    similarity_score = vector_db.similarity_search_with_score(query, search_type = "mmr", k=1)[0][1]
+
+    if similarity_score > 0.45:
+        return "Sorry, I don't know the answer. If you have any specific questions or need information related to Swinburne University, feel free to ask!"
+
     return response['answer']
 
 
-vector_db = get_vectordb(vector_path = 'BOKU_BOT')
+vector_db = get_vectordb(vector_path = 'Swinburne_Chat_Bot')
 chain = create_chain(vector_db)
 
-#embedding_vector = OpenAIEmbeddings().embed_query('CEO of google?')
-#docs = vector_db.similarity_search_by_vector(embedding_vector)
-#print(docs[0])
-
 def main():
-    st.set_page_config(page_title="Chat With BOKU", page_icon=":goat:")
-    st.header("Chat With BOKU :goat:")
+    st.set_page_config(page_title="Chat With Swinburne FAQ", page_icon="🎓")
+    st.header("Chat With Swinburne FAQ 🎓")
 
-    # Initialize session state for chat history if not already present
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
 
-    # Use a form to handle input submission
     with st.form(key='user_input_form', clear_on_submit=True):
-        user_input = st.text_input("Ask BOKU anything:", placeholder="Type your message and press Enter")
+        user_input = st.text_input("Ask me anything:", placeholder="Type your message and press Enter")
         submit_button = st.form_submit_button(label='Send')
 
-    # Process the user query when the form is submitted
     if submit_button and user_input:
-        with st.spinner('Boku is thinking...'):
-            # Add user input to chat history before processing
+        with st.spinner('FAQ Chatbot is thinking...'):
             st.session_state['chat_history'].append(HumanMessage(content=user_input))
+            ai_output = process_chat(vector_db, chain, user_input, st.session_state['chat_history'])
 
-            # Process the chat and get the response
-            ai_output = process_chat(chain, user_input, st.session_state['chat_history'])
-
-            # Add the assistant's response to the chat history
             st.session_state['chat_history'].append(AIMessage(content=ai_output))
 
-    # Display chat messages using Streamlit chat_message with newest messages at the top
     for msg in reversed(st.session_state['chat_history']):
         if isinstance(msg, HumanMessage):
             st.chat_message("user", avatar="🧑").markdown(f"**You:** {msg.content}")
         else:
-            st.chat_message("assistant", avatar="🤖").markdown(f"**BOKU:** {msg.content}")
+            st.chat_message("assistant", avatar="🤖").markdown(f"**FAQ:** {msg.content}")
 
 if __name__ == '__main__':
     main()
