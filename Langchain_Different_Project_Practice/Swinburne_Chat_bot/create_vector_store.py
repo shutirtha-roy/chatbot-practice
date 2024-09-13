@@ -11,12 +11,30 @@ import os
 
 os.environ["USER_AGENT"] = os.getenv('USER_AGENT')
 
-splitter = RecursiveCharacterTextSplitter()
-embedder = OpenAIEmbeddings(openai_api_key = os.getenv('OPENAI_API_KEY'))
+def load_and_split_pdf(file_path):
+    loader = PyPDFLoader(file_path)
+    splitter = RecursiveCharacterTextSplitter()
+    return splitter.split_documents(loader.load())
 
-splitted_docs = splitter.split_documents(WebBaseLoader(urls).load())
+def storeVector(pdfs):
+    embedder = OpenAIEmbeddings(openai_api_key = os.getenv('OPENAI_API_KEY'))
 
-vector_store = FAISS.from_documents(splitted_docs, embedder)
-vector_store.save_local("Swinburne_Chat_Bot")
+    for index, pdf in enumerate(pdfs):
+        split_docs = load_and_split_pdf(pdf)
+        if index == 0:
+            vector_store = FAISS.from_documents(split_docs, embedder)
+        else:
+            vector_store = FAISS.from_documents(split_docs, embedder)
+            vector_store.merge_from(vector_store)
+
+        vector_store.save_local("Swinburne_Chat_Bot_FROM_PDF")
+
+#splitter = RecursiveCharacterTextSplitter()
+#embedder = OpenAIEmbeddings(openai_api_key = os.getenv('OPENAI_API_KEY'))
+
+#splitted_docs = splitter.split_documents(WebBaseLoader(urls).load())
+
+#vector_store = FAISS.from_documents(splitted_docs, embedder)
+#vector_store.save_local("Swinburne_Chat_Bot")
 
 

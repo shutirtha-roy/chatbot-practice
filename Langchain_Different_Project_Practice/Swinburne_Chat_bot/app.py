@@ -7,7 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain_core.messages import HumanMessage, AIMessage
-
+from langchain.document_loaders import PyPDFLoader
 
 load_dotenv()
 
@@ -16,15 +16,14 @@ def get_vectordb(vector_path):
     vector_store = FAISS.load_local(vector_path, embedder, index_name="index", allow_dangerous_deserialization=True)
     return vector_store
 
-
 def create_chain(vector_db):
-    model = ChatOpenAI(model="gpt-4o" , temperature=0.5) # set the model you are wanting to use
+    model = ChatOpenAI(model="gpt-4o" , temperature=0.5)
 
     prompt = ChatPromptTemplate.from_messages([
         ('system', 'You are a helpful assistant for Swinburne University students. Answer their questions according to the given context {context}.'),
         MessagesPlaceholder('chat_history'),
         ('human', 'Gives greetings'),
-        ('system', 'Hi! I am BOKU. I am a chat assistant designed for the students of Swinburne University. How may I help you?'),
+        ('system', 'Hi! I am Swinburne Chat Bot. I am a chat assistant designed for the students of Swinburne University. How may I help you?'),
         ('human', '{input}')
     ])
 
@@ -35,13 +34,9 @@ def create_chain(vector_db):
 
     retriever = vector_db.as_retriever(
         search_type = "mmr", search_kwargs={'k': 1, "score_threshold": 0.1}
-    ) #set the parameter according to your need
-    
-    #print(vector_db.similarity_search_with_score("Swinburne", search_type = "mmr", k=1))
+    )
     
     retrieval_chain = create_retrieval_chain(retriever, chain)
-    #print([doc for doc in retrieval_chain])
-    #print(retriever)
 
     return retrieval_chain
 
@@ -57,7 +52,6 @@ def process_chat(vector_db, chain, query, chat_history):
         return "Sorry, I don't know the answer. If you have any specific questions or need information related to Swinburne University, feel free to ask!"
 
     return response['answer']
-
 
 vector_db = get_vectordb(vector_path = 'Swinburne_Chat_Bot')
 chain = create_chain(vector_db)
