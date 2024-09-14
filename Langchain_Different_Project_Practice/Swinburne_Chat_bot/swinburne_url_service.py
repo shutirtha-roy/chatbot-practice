@@ -31,7 +31,7 @@ def save_urls_to_file(urls, filename):
         file.write(urls_string)
 
 if __name__ == "__main__":
-    sitemap_url = "https://www.swinburne.edu.au/sitemap.xml"  # Replace with your sitemap URL
+    sitemap_url = "https://www.swinburne.edu.au/sitemap.xml"
     all_urls = parse_sitemap(sitemap_url)
     sitemap_url2 = 'https://www.swinburneonline.edu.au/sitemap_index.xml'
     all_urls.extend(parse_sitemap(sitemap_url2))
